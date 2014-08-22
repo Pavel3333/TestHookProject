@@ -4,7 +4,7 @@
 ; language: flat assembler
 ; tools needed: fasm 1.7x (www.flatassembler.net)
 
-format PE GUI 4.0
+format PE NATIVE 4.0
 entry start
 
 macro cominvoke object,proc,[arg]
@@ -24,11 +24,12 @@ include 'win32a.inc'
 section '.text' code readable executable
 
 start:
-    invoke  CreateWindowEx,0,class,0,0,0,0,0,0,0,0,0,0
-    mov     [hWnd],eax
-    call    GetDX9Methods
-    cominvoke [pD3DDevice],42
-    invoke  ExitProcess,0
+    xor 	ebx,ebx
+    invoke	GetDesktopWindow
+    mov 	[hWnd],eax
+    call	GetDX9Methods
+    cominvoke	[pD3DDevice],42
+    invoke	ExitProcess,ebx
 
 proc GetDX9Methods
     invoke	LoadLibraryA,d3d9dllname
@@ -36,10 +37,11 @@ proc GetDX9Methods
     invoke	GetProcAddress,[d3d9dll],d3dcreate
     push	32 ; SDK_VERSION
     call	eax
-    mov 	[pD3D],eax
+    ;mov	 [pD3D],eax
     mov 	[d3dpp.SwapEffect],3
     mov 	[d3dpp.Windowed],1
-    cominvoke	[pD3D],16,0,1,[hWnd],0x120,d3dpp,pD3DDevice ; 16 = CreateDevice offset
+    cominvoke	[eax],16,ebx,1,[hWnd],0x120,d3dpp,pD3DDevice ; 16 = CreateDevice offset
+
     mov 	eax,[pD3DDevice]
     stdcall	replace,[eax],42,MyEndScene,EndScene ; 42 = EndScene offset
     ret
@@ -76,6 +78,7 @@ AlreadyReplaced:
 endp
 
 proc MyEndScene obj
+     int 3
      invoke EndScene,[obj]
      ret
 endp
@@ -85,7 +88,7 @@ section '.data' data readable writeable
   d3dcreate db "Direct3DCreate9",0
   d3d9dllname db "d3d9",0
   class db "STATIC",0
-  pD3D dd 0
+  ;pD3D dd 0
   pD3DDevice dd 0
   hWnd dd 0
   Release dd 0
